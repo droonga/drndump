@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+#
+# Copyright (C) 2014 Droonga Project
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 2.1 as published by the Free Software Foundation.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+require "socket"
+require "optparse"
+require "json"
+
+require "cool.io"
+
+require "droonga/client"
+
+require "drndump/version"
+
+loop = Coolio::Loop.default
+
+options = {
+  :host          => "localhost",
+  :port          => 10031,
+  :tag           => "droonga",
+  :dataset       => "Droonga",
+  :protocol      => :droonga,
+  :receiver_host => Socket.gethostname,
+  :receiver_port => 0,
+  :backend       => :coolio,
+  :loop          => loop,
+}
+
+parser = OptionParser.new
+parser.version = Drndump::VERSION
+parser.separator("")
+parser.separator("Connect:")
+parser.on("--host=HOST",
+          "Host name to be connected.",
+          "(#{options[:host]})") do |host|
+  options[:host] = host
+end
+parser.on("--port=PORT", Integer,
+          "Port number to be connected.",
+          "(#{options[:port]})") do |port|
+  options[:port] = port
+end
+parser.on("--tag=TAG",
+          "Tag name to be used to communicate with Droonga system.",
+          "(#{options[:tag]})") do |tag|
+  options[:tag] = tag
+end
+parser.separator("")
+parser.separator("Data:")
+parser.on("--dataset=DATASET",
+          "Dataset to be dumped.",
+          "(#{options[:dataset]})") do |dataset|
+  options[:dataset] = dataset
+end
+parser.separator("")
+parser.separator("Droonga protocol:")
+parser.on("--receiver-host=HOST",
+          "Host name to be received a response from Droonga engine.",
+          "(#{options[:receiver_host]})") do |host|
+  options[:receiver_host] = host
+end
+parser.on("--receiver-port=PORT", Integer,
+          "Port number to be received a response from Droonga engine.",
+          "(#{options[:receiver_port]})") do |port|
+  options[:receiver_port] = port
+end
+parser.parse!(ARGV)
+
+dump_message = {
+  "type" => "dump",
+  "dataset" => options.delete(:dataset),
+}
+client = Droonga::Client.new(options)
+
+error = nil
+client.subscribe(dump_message) do |message|
+  case message
+  when Droonga::Client::Error
+    client.close
+    error = message
+  else
+    case message["type"]
+    when "dump.record"
+      add_message = message.dup
+      add_message.delete("inReplyTo")
+      add_message["type"] = "add"
+      puts(JSON.pretty_generate(add_message))
+    when "dump.end"
+      client.close
+    end
+  end
+end
+loop.run
+
+if error
+  $stderr.puts(error)
+  exit(false)
+end
