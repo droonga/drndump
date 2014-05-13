@@ -86,6 +86,7 @@ dump_message = {
 client = Droonga::Client.new(options)
 
 error_message = nil
+n_dumpers = 0
 client.subscribe(dump_message) do |message|
   case message
   when Droonga::Client::Error
@@ -104,8 +105,11 @@ client.subscribe(dump_message) do |message|
       add_message.delete("inReplyTo")
       add_message["type"] = "add"
       puts(JSON.pretty_generate(add_message))
+    when "dump.start"
+      n_dumpers += 1
     when "dump.end"
-      client.close
+      n_dumpers -= 1
+      client.close if n_dumpers <= 0
     end
   end
 end
