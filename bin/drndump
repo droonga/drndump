@@ -85,14 +85,20 @@ dump_message = {
 }
 client = Droonga::Client.new(options)
 
-error = nil
+error_message = nil
 client.subscribe(dump_message) do |message|
   case message
   when Droonga::Client::Error
     client.close
-    error = message
+    error_message = message.to_s
   else
     case message["type"]
+    when "dump.result"
+      if message["statusCode"] != 200
+        client.close
+        error = message["body"]
+        error_message = "#{error['name']}: #{error['message']}"
+      end
     when "dump.record"
       add_message = message.dup
       add_message.delete("inReplyTo")
@@ -105,7 +111,7 @@ client.subscribe(dump_message) do |message|
 end
 loop.run
 
-if error
-  $stderr.puts(error)
+if error_message
+  $stderr.puts(error_message)
   exit(false)
 end
