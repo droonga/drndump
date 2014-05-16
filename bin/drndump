@@ -85,6 +85,80 @@ dump_message = {
 }
 client = Droonga::Client.new(options)
 
+def convert_to_table_create_message(message)
+  body = message["body"]
+  flags = []
+  case body["type"]
+  when "Array"
+    flags << "TABLE_NO_KEY"
+  when "Hash"
+    flags << "TABLE_HASH_KEY"
+  when "PatriciaTrie"
+    flags << "TABLE_PAT_KEY"
+  when "DoubleArrayTrie"
+    flags << "TABLE_DAT_KEY"
+  end
+  table_create_message = {
+    "type"    => "table_create",
+    "dataset" => message["dataset"],
+    "body" => {
+      "name"              => body["name"],
+      "flags"             => flags.join("|"),
+      "key_type"          => body["keyType"],
+    }
+  }
+
+  if body["tokenizer"]
+    table_create_message["body"]["default_tokenizer"] = body["tokenizer"]
+  end
+  if body["normalizer"]
+    table_create_message["body"]["normalizer"] = body["normalizer"]
+  end
+
+  table_create_message
+end
+
+def convert_to_column_create_message(message)
+  body = message["body"]
+  column_create_message = {
+    "type"    => "column_create",
+    "dataset" => message["dataset"],
+    "body" => {
+      "table"  => body["table"],
+      "name"   => body["name"],
+      "type"   => body["valueType"],
+    }
+  }
+
+  flags = []
+  case body["type"]
+  when "Scalar"
+    flags << "COLUMN_SCALAR"
+  when "Vector"
+    flags << "COLUMN_VECTOR"
+    vector_options = body["vectorOptions"] || {}
+    flags << "WITH_WEIGHT" if vector_options["weight"]
+  when "Index"
+    flags << "COLUMN_INDEX"
+    index_options = body["indexOptions"] || {}
+    flags << "WITH_SECTION"  if index_options["section"]
+    flags << "WITH_WEIGHT"   if index_options["weight"]
+    flags << "WITH_POSITION" if index_options["position"]
+  end
+
+  column_create_message["body"]["flags"] = flags.join("|")
+
+  if body["type"] == "Index"
+    index_options = body["indexOptions"] || {}
+    sources = index_options["sources"] || []
+    unless sources.empty?
+      column_create_message["body"]["source"] = sources.join(",")
+    end
+  end
+
+  column_create_message
+end
+
 error_message = nil
 n_dumpers = 0
 client.subscribe(dump_message) do |message|
@@ -94,12 +168,18 @@ client.subscribe(dump_message) do |message|
     error_message = message.to_s
   else
     case message["type"]
-    when "dump.result"
+    when "dump.result", "dump.error"
       if message["statusCode"] != 200
         client.close
         error = message["body"]
         error_message = "#{error['name']}: #{error['message']}"
       end
+    when "dump.table"
+      table_create_message = convert_to_table_create_message(message)
+      puts(JSON.pretty_generate(table_create_message))
+    when "dump.column"
+      column_create_message = convert_to_column_create_message(message)
+      puts(JSON.pretty_generate(column_create_message))
     when "dump.record"
       add_message = message.dup
       add_message.delete("inReplyTo")
