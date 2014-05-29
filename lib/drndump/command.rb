@@ -36,7 +36,7 @@ module Drndump
       @host = "localhost"
       @port = 10031
       @tag  = "droonga"
-      @dataset  = "Droonga"
+      @dataset  = "Default"
       @receiver_host = Socket.gethostname
       @receiver_port = 0
     end
