@@ -15,6 +15,7 @@
 
 require "socket"
 require "optparse"
+require "json"
 
 require "cool.io"
 
@@ -114,7 +115,9 @@ module Drndump
         :backend => :coolio,
         :loop    => @loop,
       }
-      @dumper.run(:client_options => client_options)
+      @dumper.run(:client_options => client_options) do |message|
+        puts(JSON.pretty_generate(message))
+      end
       @loop.run
       @dumper.error_message
     end

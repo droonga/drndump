@@ -14,7 +14,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 require "socket"
-require "json"
 
 require "droonga/client"
 
@@ -30,13 +29,14 @@ module Drndump
 
       @receiver_host = params[:receiver_host] || Socket.gethostname
       @receiver_port = params[:receiver_port] || 0
+
+      @error_message = nil
     end
 
-    def run(options={})
+    def run(options={}, &block)
       extra_client_options = options[:client_options] || {}
       client = Droonga::Client.new(client_options.merge(extra_client_options))
 
-      @error_message = nil
       n_dumpers = 0
 
       dump_message = {
@@ -58,15 +58,15 @@ module Drndump
             end
           when "dump.table"
             table_create_message = convert_to_table_create_message(message)
-            puts(JSON.pretty_generate(table_create_message))
+            yield(table_create_message)
           when "dump.column"
             column_create_message = convert_to_column_create_message(message)
-            puts(JSON.pretty_generate(column_create_message))
+            yield(column_create_message)
           when "dump.record"
             add_message = message.dup
             add_message.delete("inReplyTo")
             add_message["type"] = "add"
-            puts(JSON.pretty_generate(add_message))
+            yield(add_message)
           when "dump.start"
             n_dumpers += 1
           when "dump.end"
