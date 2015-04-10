@@ -24,6 +24,8 @@ require "drndump/version"
 
 module Drndump
   class Dumper
+    attr_reader :error_message
+
     def initialize(loop, params)
       @loop = loop
 
@@ -34,12 +36,15 @@ module Drndump
 
       @receiver_host = params[:receiver_host] || Socket.gethostname
       @receiver_port = params[:receiver_port] || 0
+
+      prepare
     end
 
-    def run
+    private
+    def prepare
       client = Droonga::Client.new(client_options)
 
-      error_message = nil
+      @error_message = nil
       n_dumpers = 0
 
       dump_message = {
@@ -50,14 +55,14 @@ module Drndump
         case message
         when Droonga::Client::Error
           client.close
-          error_message = message.to_s
+          @error_message = message.to_s
         else
           case message["type"]
           when "dump.result", "dump.error"
             if message["statusCode"] != 200
               client.close
               error = message["body"]
-              error_message = "#{error['name']}: #{error['message']}"
+              @error_message = "#{error['name']}: #{error['message']}"
             end
           when "dump.table"
             table_create_message = convert_to_table_create_message(message)
@@ -78,12 +83,8 @@ module Drndump
           end
         end
       end
-      @loop.run
-
-      error_message
     end
 
-    private
     def client_options
       {
         :host          => @host,

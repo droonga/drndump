@@ -111,7 +111,8 @@ module Drndump
                            :tag           => @tag,
                            :receiver_host => @receiver_host,
                            :receiver_port => @receiver_port)
-      @dumper.run
+      @loop.run
+      @dumper.error_message
     end
   end
 end
