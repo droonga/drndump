@@ -15,11 +15,8 @@
 
 require "socket"
 require "optparse"
-require "json"
 
 require "cool.io"
-
-require "droonga/client"
 
 require "drndump/version"
 require "drndump/dumper"
