@@ -110,7 +110,11 @@ module Drndump
                            :tag           => @tag,
                            :receiver_host => @receiver_host,
                            :receiver_port => @receiver_port)
-      @dumper.run(:loop => @loop)
+      client_options = {
+        :backend => :coolio,
+        :loop    => @loop,
+      }
+      @dumper.run(:client_options => client_options)
       @loop.run
       @dumper.error_message
     end

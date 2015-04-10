@@ -16,11 +16,7 @@
 require "socket"
 require "json"
 
-require "cool.io"
-
 require "droonga/client"
-
-require "drndump/version"
 
 module Drndump
   class Dumper
@@ -36,8 +32,9 @@ module Drndump
       @receiver_port = params[:receiver_port] || 0
     end
 
-    def run(loop)
-      client = Droonga::Client.new(client_options.merge(:loop => loop))
+    def run(options={})
+      extra_client_options = options[:client_options] || {}
+      client = Droonga::Client.new(client_options.merge(extra_client_options))
 
       @error_message = nil
       n_dumpers = 0
@@ -78,6 +75,8 @@ module Drndump
           end
         end
       end
+
+      @error_message
     end
 
     private
@@ -89,7 +88,6 @@ module Drndump
         :protocol      => :droonga,
         :receiver_host => @receiver_host,
         :receiver_port => @receiver_port,
-        :backend       => :coolio,
       }
     end
 
