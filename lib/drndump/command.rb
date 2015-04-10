@@ -105,12 +105,12 @@ module Drndump
     end
 
     def dump
-      @dumper = Dumper.new(@loop,
-                           :host          => @host,
+      @dumper = Dumper.new(:host          => @host,
                            :port          => @port,
                            :tag           => @tag,
                            :receiver_host => @receiver_host,
                            :receiver_port => @receiver_port)
+      @dumper.run(:loop => @loop)
       @loop.run
       @dumper.error_message
     end

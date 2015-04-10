@@ -26,9 +26,7 @@ module Drndump
   class Dumper
     attr_reader :error_message
 
-    def initialize(loop, params)
-      @loop = loop
-
+    def initialize(params)
       @host     = params[:host]    || "localhost"
       @port     = params[:port]    || 10031
       @tag      = params[:tag]     || "droonga"
@@ -36,13 +34,10 @@ module Drndump
 
       @receiver_host = params[:receiver_host] || Socket.gethostname
       @receiver_port = params[:receiver_port] || 0
-
-      prepare
     end
 
-    private
-    def prepare
-      client = Droonga::Client.new(client_options)
+    def run(loop)
+      client = Droonga::Client.new(client_options.merge(:loop => loop))
 
       @error_message = nil
       n_dumpers = 0
@@ -85,6 +80,7 @@ module Drndump
       end
     end
 
+    private
     def client_options
       {
         :host          => @host,
@@ -94,7 +90,6 @@ module Drndump
         :receiver_host => @receiver_host,
         :receiver_port => @receiver_port,
         :backend       => :coolio,
-        :loop          => @loop,
       }
     end
 
