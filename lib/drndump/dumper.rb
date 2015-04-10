@@ -39,9 +39,14 @@ module Drndump
 
       n_dumpers = 0
 
+      dump_params = {}
+      if options[:messages_per_second]
+        dump_params["messagesPerSecond"] = options[:messages_per_second]
+      end
       dump_message = {
         "type"    => "dump",
         "dataset" => @dataset,
+        "body"    => dump_params,
       }
       client.subscribe(dump_message) do |message|
         case message
