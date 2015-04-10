@@ -105,7 +105,7 @@ module Drndump
       parser
     end
 
-    def dumper_options
+    def dumper_params
       {
         :host          => @host,
         :port          => @port,
@@ -116,7 +116,7 @@ module Drndump
     end
 
     def dump
-      @dumper = Dumper.new(dumper_options)
+      @dumper = Dumper.new(dumper_params)
       client_options = {
         :backend => :coolio,
         :loop    => @loop,

@@ -22,13 +22,13 @@ module Drndump
     attr_reader :error_message
 
     def initialize(params)
-      @host     = params[:host]    || "localhost"
-      @port     = params[:port]    || 10031
-      @tag      = params[:tag]     || "droonga"
-      @dataset  = params[:dataset] || "Default"
+      @host     = params[:host]
+      @port     = params[:port]
+      @tag      = params[:tag]
+      @dataset  = params[:dataset]
 
-      @receiver_host = params[:receiver_host] || Socket.gethostname
-      @receiver_port = params[:receiver_port] || 0
+      @receiver_host = params[:receiver_host]
+      @receiver_port = params[:receiver_port]
 
       @error_message = nil
     end
