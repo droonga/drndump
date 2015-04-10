@@ -110,6 +110,7 @@ module Drndump
         :host          => @host,
         :port          => @port,
         :tag           => @tag,
+        :dataset       => @dataset,
         :receiver_host => @receiver_host,
         :receiver_port => @receiver_port,
       }
