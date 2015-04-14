@@ -20,6 +20,7 @@ require "droonga/client"
 module Drndump
   class Dumper
     attr_reader :error_message
+    attr_writer :on_finish
 
     def initialize(params)
       @host     = params[:host]
@@ -31,6 +32,8 @@ module Drndump
       @receiver_port = params[:receiver_port]
 
       @error_message = nil
+
+      @on_finish = nil
     end
 
     def run(options={}, &block)
@@ -77,6 +80,7 @@ module Drndump
           when "dump.end"
             n_dumpers -= 1
             client.close if n_dumpers <= 0
+            @on_finish.call unless @on_finish.nil?
           end
         end
       end
