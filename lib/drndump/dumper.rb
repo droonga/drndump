@@ -81,7 +81,7 @@ module Drndump
             n_dumpers -= 1
             if n_dumpers <= 0
               client.close
-              @on_finish.call unless @on_finish.nil?
+              @on_finish.call if @on_finish
             end
           end
         end
