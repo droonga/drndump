@@ -20,7 +20,7 @@ require "json"
 require "cool.io"
 
 require "drndump/version"
-require "drndump/dumper"
+require "drndump/dump_client"
 
 module Drndump
   class Command
@@ -117,7 +117,7 @@ module Drndump
     end
 
     def dump
-      @dumper = Dumper.new(dumper_params)
+      @dumper = DumpClient.new(dumper_params)
       client_options = {
         :backend => :coolio,
         :loop    => @loop,

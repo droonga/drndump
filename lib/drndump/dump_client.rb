@@ -18,7 +18,7 @@ require "socket"
 require "droonga/client"
 
 module Drndump
-  class Dumper
+  class DumpClient
     attr_reader :error_message
     attr_writer :on_finish
 
