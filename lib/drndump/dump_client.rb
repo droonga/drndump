@@ -25,6 +25,9 @@ module Drndump
     class NilMessage < StandardError
     end
 
+    class InvalidMessage < StandardError
+    end
+
     def initialize(params)
       @host     = params[:host]
       @port     = params[:port]
@@ -64,22 +67,17 @@ module Drndump
       client.subscribe(dump_message) do |message|
         on_progress(message)
         case message
-        when nil
-          error = NilMessage.new("nil message in dump")
-          on_error(error)
-          client.close
-          @error_message = error.to_s
         when Droonga::Client::Error
-          on_error(message)
           client.close
+          on_error(message)
           @error_message = message.to_s
-        else
+        when Hash
           case message["type"]
           when "dump.result", "dump.error"
             if message["statusCode"] != 200
               client.close
               error = message["body"]
-              on_error(message)
+              on_error(error)
               @error_message = "#{error['name']}: #{error['message']}"
             end
           when "dump.table"
@@ -102,6 +100,17 @@ module Drndump
               on_finish
             end
           end
+        when NilClass
+          client.close
+          error = NilMessage.new("nil message in dump")
+          on_error(error)
+          @error_message = error.to_s
+        else
+          client.close
+          error = InvalidMessage.new("invalid message in dump",
+                                     :message => message.inspect)
+          on_error(error)
+          @error_message = error.to_s
         end
       end
 
