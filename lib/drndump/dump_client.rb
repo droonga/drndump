@@ -28,6 +28,12 @@ module Drndump
     class InvalidMessage < StandardError
     end
 
+    class ClientError < StandardError
+      def initialize(error)
+        super(error.inspect)
+      end
+    end
+
     def initialize(params)
       @host     = params[:host]
       @port     = params[:port]
@@ -50,7 +56,7 @@ module Drndump
       extra_client_options = options[:client_options] || @client_options || {}
       client = Droonga::Client.new(client_options.merge(extra_client_options))
       client.on_error = lambda do |error|
-        on_error(error)
+        on_error(ClientError.new(error))
       end
 
       n_dumpers = 0
