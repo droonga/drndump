@@ -22,6 +22,9 @@ module Drndump
     attr_reader :error_message
     attr_writer :on_finish, :on_progress, :on_error
 
+    class NilMessage < StandardError
+    end
+
     def initialize(params)
       @host     = params[:host]
       @port     = params[:port]
@@ -59,6 +62,11 @@ module Drndump
       client.subscribe(dump_message) do |message|
         on_progress(message)
         case message
+        when nil
+          error = NilMessage.new("nil message in dump")
+          on_error(error)
+          client.close
+          @error_message = error.to_s
         when Droonga::Client::Error
           on_error(message)
           client.close
