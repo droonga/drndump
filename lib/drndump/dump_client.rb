@@ -20,7 +20,7 @@ require "droonga/client"
 module Drndump
   class DumpClient
     attr_reader :error_message
-    attr_writer :on_finish, :on_progress
+    attr_writer :on_finish, :on_progress, :on_error
 
     def initialize(params)
       @host     = params[:host]
@@ -35,11 +35,15 @@ module Drndump
 
       @on_finish = nil
       @on_progress = nil
+      @on_error = nil
     end
 
     def run(options={}, &block)
       extra_client_options = options[:client_options] || {}
       client = Droonga::Client.new(client_options.merge(extra_client_options))
+      client.on_error = lambda do |error|
+        on_error(error)
+      end
 
       n_dumpers = 0
 
@@ -53,9 +57,10 @@ module Drndump
         "body"    => dump_params,
       }
       client.subscribe(dump_message) do |message|
-        @on_progress.call(message) if @on_progress
+        on_progress(message)
         case message
         when Droonga::Client::Error
+          on_error(message)
           client.close
           @error_message = message.to_s
         else
@@ -64,6 +69,7 @@ module Drndump
             if message["statusCode"] != 200
               client.close
               error = message["body"]
+              on_error(message)
               @error_message = "#{error['name']}: #{error['message']}"
             end
           when "dump.table"
@@ -83,7 +89,7 @@ module Drndump
             n_dumpers -= 1
             if n_dumpers <= 0
               client.close
-              @on_finish.call if @on_finish
+              on_finish
             end
           end
         end
@@ -176,6 +182,18 @@ module Drndump
       end
 
       column_create_message
+    end
+
+    def on_finish
+      @on_finish.call if @on_finish
+    end
+
+    def on_progress(message)
+      @on_progress.call(message) if @on_progress
+    end
+
+    def on_error(error)
+      @on_error.call(error) if @on_error
     end
   end
 end
