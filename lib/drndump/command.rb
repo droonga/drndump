@@ -113,16 +113,16 @@ module Drndump
         :dataset       => @dataset,
         :receiver_host => @receiver_host,
         :receiver_port => @receiver_port,
-        :client_options => {
-          :backend => :coolio,
-          :loop    => @loop,
-        },
       }
     end
 
     def dump
       @dumper = DumpClient.new(dumper_params)
-      @dumper.run do |message|
+      dump_options => {
+        :backend => :coolio,
+        :loop    => @loop,
+      }
+      @dumper.run(dump_options) do |message|
         puts(JSON.pretty_generate(message))
       end
       @loop.run
