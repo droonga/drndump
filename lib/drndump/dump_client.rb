@@ -34,6 +34,8 @@ module Drndump
       @receiver_host = params[:receiver_host]
       @receiver_port = params[:receiver_port]
 
+      @client_options = params[:client_options]
+
       @error_message = nil
 
       @on_finish = nil
@@ -42,7 +44,7 @@ module Drndump
     end
 
     def run(options={}, &block)
-      extra_client_options = options[:client_options] || {}
+      extra_client_options = options[:client_options] || @client_options || {}
       client = Droonga::Client.new(client_options.merge(extra_client_options))
       client.on_error = lambda do |error|
         on_error(error)
