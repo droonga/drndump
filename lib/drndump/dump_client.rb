@@ -20,7 +20,7 @@ require "droonga/client"
 module Drndump
   class DumpClient
     attr_reader :error_message
-    attr_writer :on_finish
+    attr_writer :on_finish, :on_progress
 
     def initialize(params)
       @host     = params[:host]
@@ -34,6 +34,7 @@ module Drndump
       @error_message = nil
 
       @on_finish = nil
+      @on_progress = nil
     end
 
     def run(options={}, &block)
@@ -52,6 +53,7 @@ module Drndump
         "body"    => dump_params,
       }
       client.subscribe(dump_message) do |message|
+        @on_progress.call(message) if @on_progress
         case message
         when Droonga::Client::Error
           client.close
