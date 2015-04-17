@@ -20,6 +20,7 @@ require "droonga/client"
 module Drndump
   class DumpClient
     DEFAULT_MESSAGES_PER_SECOND = 10000 # same to droogna-engine's one
+    MIN_REPORTED_THROUGHPUT = 0.01
 
     attr_reader :n_forecasted_messages, :n_received_messages
     attr_reader :error_message
@@ -71,6 +72,10 @@ module Drndump
 
       @n_messages_per_second = options[:messages_per_second] || DEFAULT_MESSAGES_PER_SECOND
       @n_messages_per_second = [@n_messages_per_second, 1].max
+
+      @measure_start_time = Time.now
+      @previous_measure_time = @measure_start_time
+      @previous_n_received_messages = 0
 
       dump_message = {
         "type"    => "dump",
@@ -137,12 +142,28 @@ module Drndump
       @error_message
     end
 
+    def recent_throughput
+      now = Time.now
+      n_messages = @n_received_messages - @previous_n_received_messages
+      if now - @previous_measure_time < 1
+        now = @previous_measure_time
+        n_messages = @previous_n_received_messages
+      else
+        @previous_measure_time = now
+        @previous_n_received_messages = n_messages.to_f
+      end
+      elapsed_seconds = now - @measure_start_time
+
+      [n_messages / elapsed_seconds, MIN_REPORTED_THROUGHPUT].max
+    end
+
     def n_remaining_messages
       [@n_forecasted_messages - @n_received_messages, 0].max
     end
 
     def remaining_seconds
-      n_remaining_messages.to_f / @n_messages_per_second
+      throughput = [recent_throughput, @n_messages_per_second].min
+      n_remaining_messages.to_f / throughput
     end
 
     ONE_MINUTE_IN_SECONDS = 60
