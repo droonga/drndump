@@ -137,6 +137,29 @@ module Drndump
       @error_message
     end
 
+    def n_remaining_messages
+      [@n_forecasted_messages - @n_received_messages, 0].max
+    end
+
+    def remaining_seconds
+      n_remaining_messages.to_f / @n_messages_per_second
+    end
+
+    ONE_MINUTE_IN_SECONDS = 60
+    ONE_HOUR_IN_SECONDS = ONE_MINUTE_IN_SECONDS * 60
+
+    def formatted_remaining_time
+      seconds  = remaining_seconds
+      hours    = (seconds / ONE_HOUR_IN_SECONDS).floor
+      seconds -= hours * ONE_HOUR_IN_SECONDS
+      minutes  = (seconds / ONE_MINUTE_IN_SECONDS).floor
+      seconds -= minutes * ONE_MINUTE_IN_SECONDS
+      sprintf("%02i:%02i:%02i",
+              remaining_hours,
+              remaining_minutes,
+              remaining_seconds)
+    end
+
     def progress_percentage
       return 0 if @n_forecasted_messages.zero?
       progress = @n_received_messages.to_f / @n_forecasted_messages
