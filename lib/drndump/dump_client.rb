@@ -154,10 +154,7 @@ module Drndump
       seconds -= hours * ONE_HOUR_IN_SECONDS
       minutes  = (seconds / ONE_MINUTE_IN_SECONDS).floor
       seconds -= minutes * ONE_MINUTE_IN_SECONDS
-      sprintf("%02i:%02i:%02i",
-              remaining_hours,
-              remaining_minutes,
-              remaining_seconds)
+      sprintf("%02i:%02i:%02i", hours, minutes, seconds)
     end
 
     def progress_percentage
