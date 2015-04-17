@@ -75,7 +75,7 @@ module Drndump
 
       @measure_start_time = Time.now
       @previous_measure_time = @measure_start_time
-      @previous_n_received_messages = 0
+      @previous_n_received_messages = 0.0
 
       dump_message = {
         "type"    => "dump",
