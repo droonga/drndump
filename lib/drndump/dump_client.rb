@@ -19,6 +19,8 @@ require "droonga/client"
 
 module Drndump
   class DumpClient
+    DEFAULT_MESSAGES_PER_SECOND = 10000 # same to droogna-engine's one
+
     attr_reader :n_forecasted_messages, :n_received_messages
     attr_reader :error_message
     attr_writer :on_finish, :on_progress, :on_error
@@ -46,6 +48,7 @@ module Drndump
 
       @n_forecasted_messages = 0
       @n_received_messages = 0
+      @n_messages_per_second = DEFAULT_MESSAGES_PER_SECOND
 
       @error_message = nil
 
@@ -66,14 +69,15 @@ module Drndump
 
       n_dumpers = 0
 
-      dump_params = {}
-      if options[:messages_per_second]
-        dump_params["messagesPerSecond"] = options[:messages_per_second]
-      end
+      @n_messages_per_second = options[:messages_per_second] || DEFAULT_MESSAGES_PER_SECOND
+      @n_messages_per_second = [@n_messages_per_second, 1].max
+
       dump_message = {
         "type"    => "dump",
         "dataset" => @dataset,
-        "body"    => dump_params,
+        "body"    => {
+          "messagesPerSecond" => @n_messages_per_second,
+        },
       }
       client.subscribe(dump_message) do |message|
         on_progress(message)
