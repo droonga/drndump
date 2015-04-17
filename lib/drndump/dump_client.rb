@@ -145,6 +145,7 @@ module Drndump
     def recent_throughput
       now = Time.now
       n_messages = @n_received_messages - @previous_n_received_messages
+
       if now - @previous_measure_time < 1
         now = @previous_measure_time
         n_messages = @previous_n_received_messages
@@ -152,9 +153,15 @@ module Drndump
         @previous_measure_time = now
         @previous_n_received_messages = n_messages.to_f
       end
-      elapsed_seconds = now - @measure_start_time
 
-      [n_messages / elapsed_seconds, MIN_REPORTED_THROUGHPUT].max
+      if now == @measure_start_time
+        actual_throughput = 0
+      else
+        elapsed_seconds = now - @measure_start_time
+        actual_throughput = n_messages / elapsed_seconds
+      end
+
+      [actual_throughput, MIN_REPORTED_THROUGHPUT].max
     end
 
     def n_remaining_messages
