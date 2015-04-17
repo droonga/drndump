@@ -52,7 +52,7 @@ module Drndump
 
     def run(options={}, &block)
       extra_client_options = {
-        :backend => options[:baclend],
+        :backend => options[:backend],
         :loop    => options[:loop],
       }
       client = Droonga::Client.new(client_options.merge(extra_client_options))
