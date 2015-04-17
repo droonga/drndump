@@ -118,7 +118,7 @@ module Drndump
 
     def dump
       @dumper = DumpClient.new(dumper_params)
-      dump_options => {
+      dump_options = {
         :backend => :coolio,
         :loop    => @loop,
       }
