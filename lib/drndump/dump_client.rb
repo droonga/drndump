@@ -19,6 +19,7 @@ require "droonga/client"
 
 module Drndump
   class DumpClient
+    attr_reader :n_forecasted_messages, :n_received_messages
     attr_reader :error_message
     attr_writer :on_finish, :on_progress, :on_error
 
@@ -42,6 +43,9 @@ module Drndump
 
       @receiver_host = params[:receiver_host]
       @receiver_port = params[:receiver_port]
+
+      @n_forecasted_messages = 0
+      @n_received_messages = 0
 
       @error_message = nil
 
@@ -88,12 +92,15 @@ module Drndump
               @error_message = "#{error['name']}: #{error['message']}"
             end
           when "dump.table"
+            @n_received_messages += 1
             table_create_message = convert_to_table_create_message(message)
             yield(table_create_message)
           when "dump.column"
+            @n_received_messages += 1
             column_create_message = convert_to_column_create_message(message)
             yield(column_create_message)
           when "dump.record"
+            @n_received_messages += 1
             add_message = message.dup
             add_message.delete("inReplyTo")
             add_message["type"] = "add"
@@ -106,6 +113,8 @@ module Drndump
               client.close
               on_finish
             end
+          when "dump.forecast"
+            @n_forecasted_messages += message["body"]["nMessages"]
           end
         when NilClass
           client.close
