@@ -133,6 +133,12 @@ module Drndump
       @error_message
     end
 
+    def progress_percentage
+      return 0 if @n_forecasted_messages.zero?
+      progress = @n_received_messages.to_f / @n_forecasted_messages
+      [(progress * 100).to_i, 100].min
+    end
+
     private
     def client_options
       {
