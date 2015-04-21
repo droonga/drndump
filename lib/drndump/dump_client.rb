@@ -63,12 +63,12 @@ module Drndump
         :backend => options[:backend],
         :loop    => options[:loop],
       }
-      client = Droonga::Client.new(client_options.merge(extra_client_options))
-      client.on_error = lambda do |error|
+      @client = Droonga::Client.new(client_options.merge(extra_client_options))
+      @client.on_error = lambda do |error|
         on_error(ClientError.new(error))
       end
 
-      n_dumpers = 0
+      @n_dumpers = 0
 
       @n_messages_per_second = options[:messages_per_second] || DEFAULT_MESSAGES_PER_SECOND
       @n_messages_per_second = [@n_messages_per_second, 1].max
@@ -84,7 +84,7 @@ module Drndump
           "messagesPerSecond" => @n_messages_per_second,
         },
       }
-      client.subscribe(dump_message) do |message|
+      @client.subscribe(dump_message) do |message|
         begin
           on_progress(message)
           case message
@@ -93,53 +93,23 @@ module Drndump
             on_error(message)
             @error_message = message.to_s
           when Hash
-            case message["type"]
-            when "dump.result", "dump.error"
-              if message["statusCode"] != 200
-                client.close
-                error = message["body"]
-                on_error(error)
-                @error_message = "#{error['name']}: #{error['message']}"
-              end
-            when "dump.table"
-              @n_received_messages += 1
-              table_create_message = convert_to_table_create_message(message)
-              yield(table_create_message)
-            when "dump.column"
-              @n_received_messages += 1
-              column_create_message = convert_to_column_create_message(message)
-              yield(column_create_message)
-            when "dump.record"
-              @n_received_messages += 1
-              add_message = message.dup
-              add_message.delete("inReplyTo")
-              add_message["type"] = "add"
-              yield(add_message)
-            when "dump.start"
-              n_dumpers += 1
-            when "dump.end"
-              n_dumpers -= 1
-              if n_dumpers <= 0
-                client.close
-                on_finish
-              end
-            when "dump.forecast"
-              @n_forecasted_messages += message["body"]["nMessages"]
+            handle_dump_message(message) do |message|
+              yield(message)
             end
           when NilClass
-            client.close
+            @client.close
             error = NilMessage.new("nil message in dump")
             on_error(error)
             @error_message = error.to_s
           else
-            client.close
+            @client.close
             error = InvalidMessage.new("invalid message in dump",
                                        :message => message.inspect)
             on_error(error)
             @error_message = error.to_s
           end
         rescue Exception => exception
-          client.close
+          @client.close
           on_error(exception)
           @error_message = exception.to_s
         end
@@ -207,6 +177,42 @@ module Drndump
         :receiver_host => @receiver_host,
         :receiver_port => @receiver_port,
       }
+    end
+
+    def handle_dump_message(message, &block)
+      case message["type"]
+      when "dump.result", "dump.error"
+        if message["statusCode"] != 200
+          @client.close
+          error = message["body"]
+          on_error(error)
+          @error_message = "#{error['name']}: #{error['message']}"
+        end
+      when "dump.table"
+        @n_received_messages += 1
+        table_create_message = convert_to_table_create_message(message)
+        yield(table_create_message)
+      when "dump.column"
+        @n_received_messages += 1
+        column_create_message = convert_to_column_create_message(message)
+        yield(column_create_message)
+      when "dump.record"
+        @n_received_messages += 1
+        add_message = message.dup
+        add_message.delete("inReplyTo")
+        add_message["type"] = "add"
+        yield(add_message)
+      when "dump.start"
+        @n_dumpers += 1
+      when "dump.end"
+        @n_dumpers -= 1
+        if @n_dumpers <= 0
+          @client.close
+          on_finish
+        end
+      when "dump.forecast"
+        @n_forecasted_messages += message["body"]["nMessages"]
+      end
     end
 
     def convert_to_table_create_message(message)
