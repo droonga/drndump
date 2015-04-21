@@ -93,8 +93,8 @@ module Drndump
             on_error(message)
             @error_message = message.to_s
           when Hash
-            handle_dump_message(message) do |message|
-              yield(message)
+            handle_dump_message(message) do |restore_message|
+              yield(restore_message)
             end
           when NilClass
             raise NilMessage.new("nil message in dump")
