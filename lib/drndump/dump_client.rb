@@ -97,16 +97,10 @@ module Drndump
               yield(message)
             end
           when NilClass
-            @client.close
-            error = NilMessage.new("nil message in dump")
-            on_error(error)
-            @error_message = error.to_s
+            raise NilMessage.new("nil message in dump")
           else
-            @client.close
-            error = InvalidMessage.new("invalid message in dump",
-                                       :message => message.inspect)
-            on_error(error)
-            @error_message = error.to_s
+            raise InvalidMessage.new("invalid message in dump",
+                                     :message => message.inspect)
           end
         rescue Exception => exception
           @client.close
