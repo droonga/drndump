@@ -86,58 +86,58 @@ module Drndump
       }
       client.subscribe(dump_message) do |message|
         begin
-        on_progress(message)
-        case message
-        when Droonga::Client::Error
-          client.close
-          on_error(message)
-          @error_message = message.to_s
-        when Hash
-          case message["type"]
-          when "dump.result", "dump.error"
-            if message["statusCode"] != 200
-              client.close
-              error = message["body"]
-              on_error(error)
-              @error_message = "#{error['name']}: #{error['message']}"
+          on_progress(message)
+          case message
+          when Droonga::Client::Error
+            client.close
+            on_error(message)
+            @error_message = message.to_s
+          when Hash
+            case message["type"]
+            when "dump.result", "dump.error"
+              if message["statusCode"] != 200
+                client.close
+                error = message["body"]
+                on_error(error)
+                @error_message = "#{error['name']}: #{error['message']}"
+              end
+            when "dump.table"
+              @n_received_messages += 1
+              table_create_message = convert_to_table_create_message(message)
+              yield(table_create_message)
+            when "dump.column"
+              @n_received_messages += 1
+              column_create_message = convert_to_column_create_message(message)
+              yield(column_create_message)
+            when "dump.record"
+              @n_received_messages += 1
+              add_message = message.dup
+              add_message.delete("inReplyTo")
+              add_message["type"] = "add"
+              yield(add_message)
+            when "dump.start"
+              n_dumpers += 1
+            when "dump.end"
+              n_dumpers -= 1
+              if n_dumpers <= 0
+                client.close
+                on_finish
+              end
+            when "dump.forecast"
+              @n_forecasted_messages += message["body"]["nMessages"]
             end
-          when "dump.table"
-            @n_received_messages += 1
-            table_create_message = convert_to_table_create_message(message)
-            yield(table_create_message)
-          when "dump.column"
-            @n_received_messages += 1
-            column_create_message = convert_to_column_create_message(message)
-            yield(column_create_message)
-          when "dump.record"
-            @n_received_messages += 1
-            add_message = message.dup
-            add_message.delete("inReplyTo")
-            add_message["type"] = "add"
-            yield(add_message)
-          when "dump.start"
-            n_dumpers += 1
-          when "dump.end"
-            n_dumpers -= 1
-            if n_dumpers <= 0
-              client.close
-              on_finish
-            end
-          when "dump.forecast"
-            @n_forecasted_messages += message["body"]["nMessages"]
+          when NilClass
+            client.close
+            error = NilMessage.new("nil message in dump")
+            on_error(error)
+            @error_message = error.to_s
+          else
+            client.close
+            error = InvalidMessage.new("invalid message in dump",
+                                       :message => message.inspect)
+            on_error(error)
+            @error_message = error.to_s
           end
-        when NilClass
-          client.close
-          error = NilMessage.new("nil message in dump")
-          on_error(error)
-          @error_message = error.to_s
-        else
-          client.close
-          error = InvalidMessage.new("invalid message in dump",
-                                     :message => message.inspect)
-          on_error(error)
-          @error_message = error.to_s
-        end
         rescue Exception => exception
           client.close
           on_error(exception)
