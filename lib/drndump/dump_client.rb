@@ -85,6 +85,7 @@ module Drndump
         },
       }
       client.subscribe(dump_message) do |message|
+        begin
         on_progress(message)
         case message
         when Droonga::Client::Error
@@ -136,6 +137,11 @@ module Drndump
                                      :message => message.inspect)
           on_error(error)
           @error_message = error.to_s
+        end
+        rescue Exception => exception
+          client.close
+          on_error(exception)
+          @error_message = exception.to_s
         end
       end
 
