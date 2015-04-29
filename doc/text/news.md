@@ -1,6 +1,6 @@
 # News
 
-## 1.0.1: 2014-04-29 (planned)
+## 1.0.1: 2014-04-29
 
  * Becomes modulable. You can use internal libraries for other products.
  * Supports new `@subscribe-until` directive, for subscription type commands like `dump`.
