@@ -66,17 +66,17 @@ module Drndump
       parser.separator("")
       parser.separator("Connect:")
       parser.on("--host=HOST",
-                "Host name to be connected.",
+                "Host name of the engine node.",
                 "(#{@host})") do |host|
         @host = host
       end
       parser.on("--port=PORT", Integer,
-                "Port number to be connected.",
+                "Port number to communicate with the engine.",
                 "(#{@port})") do |port|
         @port = port
       end
       parser.on("--tag=TAG",
-                "Tag name to be used to communicate with Droonga system.",
+                "Tag name to communicate with the engine.",
                 "(#{@tag})") do |tag|
         @tag = tag
       end
@@ -84,7 +84,7 @@ module Drndump
       parser.separator("")
       parser.separator("Data:")
       parser.on("--dataset=DATASET",
-                "Dataset to be dumped.",
+                "Dataset name to be dumped.",
                 "(#{@dataset})") do |dataset|
         @dataset = dataset
       end
@@ -92,7 +92,7 @@ module Drndump
       parser.separator("")
       parser.separator("Droonga protocol:")
       parser.on("--receiver-host=HOST",
-                "Host name to be received a response from Droonga engine.",
+                "Host name of the computer you are running this command.",
                 "(#{@receiver_host})") do |host|
         @receiver_host = host
       end
