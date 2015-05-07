@@ -96,11 +96,6 @@ module Drndump
                 "(#{@receiver_host})") do |host|
         @receiver_host = host
       end
-      parser.on("--receiver-port=PORT", Integer,
-                "Port number to be received a response from Droonga engine.",
-                "(#{@receiver_port})") do |port|
-        @receiver_port = port
-      end
 
       parser
     end
